@@ -1,9 +1,10 @@
-import requests
+import requests, time
 from bs4 import BeautifulSoup
 import pandas as pd
 import urllib
 from multiprocessing import Pool, cpu_count
-
+import random
+from langdetect import detect
 
 # Specify the path to your CSV file
 csv_file_path = "proxies.csv" # id;ip;port_http;port_socks5;username;password;internal_ip
@@ -15,6 +16,8 @@ proxy_port_http = dict_data[0]['port_http']
 proxy_port_socks5 = dict_data[0]['port_socks5']
 proxy_username = dict_data[0]['username']
 proxy_password = dict_data[0]['password']
+
+langs = ['en', 'uk', 'ru']
 
 proxies = {
     "https": f'http://{proxy_username}:{proxy_password}@{proxy_server}:{proxy_port_http}' 
@@ -57,15 +60,24 @@ except requests.exceptions.RequestException as e:
 
 
 def get_job_description(jid):
-    
-    url = 'https://www.linkedin.com/jobs/view/' + jid
-    response = requests.get(url, proxies=proxies)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    
-    description = soup.find(attrs={'class':'show-more-less-html__markup'}).text.strip()
-    print(f'title: {soup.title.text}\ndescr: {description[:20]}...\nid: {jid}')
-    #print(description[:20] + '...')
-    #job_id = short_info.find(attrs)
+    time.sleep(random.uniform(2, 4))
+
+    try:
+        url = 'https://www.linkedin.com/jobs/view/' + jid
+        response = requests.get(url, proxies=proxies)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        description = soup.find(attrs={'class':'show-more-less-html__markup'}).text.strip()
+        #desc_lang_en = detect(description) == 'en'
+        desc_lang = detect(description)
+        #if desc_lang_en == False:
+
+        print(f'title: {soup.title.text}\ndescr: {description[:20]}...\nid: {jid}\nlang: {desc_lang}')
+        #print(description[:20] + '...')
+        #job_id = short_info.find(attrs)
+    except Exception as e:
+        print(jid + ' - ' + str(e))
+        
     pass
 
 total_jobs = int(''.join(filter(str.isdigit, total_jobs)))
@@ -76,7 +88,7 @@ print(f'pages: {pages}')
 
 start = 0
 #for j in range(pages):
-for j in range(2):
+for j in range(3):
     print(f'page: {j} | start: {start}')
     url = ''.join([
         'https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=',
@@ -99,13 +111,17 @@ for j in range(2):
             jobs_on_page = soup.find_all('li')
 
             # TODO: make language check
-            job_ids = [j.find(attrs={'class': 'base-card'})['data-entity-urn'].split(':')[-1] for j in jobs_on_page]
+            job_ids = [
+                j.find(attrs={'class': 'base-card'})['data-entity-urn'].split(':')[-1] 
+                for j in jobs_on_page 
+                if detect(j.find(attrs={'class':'sr-only'}).text) in langs
+            ]
             print(job_ids)
+            print(len(job_ids))
 
             with Pool(cpu_count()) as p:
                 files = p.map(get_job_description, job_ids)            
 
-            print(jobs_on_page[0].find(attrs={'class': 'sr-only'}).text.strip())
         else:
             print(f"Failed to retrieve the URL. Status code: {response.status_code}")
 
