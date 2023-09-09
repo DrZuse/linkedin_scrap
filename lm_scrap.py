@@ -57,9 +57,13 @@ except requests.exceptions.RequestException as e:
 
 
 def get_job_description(jid):
+    
     url = 'https://www.linkedin.com/jobs/view/' + jid
     response = requests.get(url, proxies=proxies)
-    description = response.find(attrs={'class':'show-more-less-html__markup relative'}).text
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    description = soup.find(attrs={'class':'show-more-less-html__markup'}).text
+    print(f'title: {soup.title.text}\ndescr: {description[:20]}...\nid: {jid}')
     print(description[:20] + '...')
     #job_id = short_info.find(attrs)
     pass
@@ -71,7 +75,8 @@ print(f'pages: {pages}')
 
 
 start = 0
-for j in range(pages):
+#for j in range(pages):
+for j in range(2):
     print(f'page: {j} | start: {start}')
     url = ''.join([
         'https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=',
