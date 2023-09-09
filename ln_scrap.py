@@ -62,9 +62,9 @@ def get_job_description(jid):
     response = requests.get(url, proxies=proxies)
     soup = BeautifulSoup(response.text, 'html.parser')
     
-    description = soup.find(attrs={'class':'show-more-less-html__markup'}).text
+    description = soup.find(attrs={'class':'show-more-less-html__markup'}).text.strip()
     print(f'title: {soup.title.text}\ndescr: {description[:20]}...\nid: {jid}')
-    print(description[:20] + '...')
+    #print(description[:20] + '...')
     #job_id = short_info.find(attrs)
     pass
 
