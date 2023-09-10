@@ -60,7 +60,7 @@ except requests.exceptions.RequestException as e:
 
 
 def get_job_description(jid):
-    time.sleep(random.uniform(2, 4))
+    time.sleep(random.uniform(1, 5))
 
     try:
         url = 'https://www.linkedin.com/jobs/view/' + jid
@@ -71,8 +71,9 @@ def get_job_description(jid):
         #desc_lang_en = detect(description) == 'en'
         desc_lang = detect(description)
         #if desc_lang_en == False:
-
-        print(f'title: {soup.title.text}\ndescr: {description[:20]}...\nid: {jid}\nlang: {desc_lang}')
+        easy_apply = soup.find(attrs={'class':'apply-button--default'}) is not None
+        seniority_level = soup.find(attrs={'class':'description__job-criteria-text'}).text.strip()
+        print(f'\ntitle: {soup.title.text}\ndescr: {description[:20]}...\nid: {jid}\nlang: {desc_lang}\neasy apply: {easy_apply}\nseniority_level: {seniority_level}')
         #print(description[:20] + '...')
         #job_id = short_info.find(attrs)
     except Exception as e:
