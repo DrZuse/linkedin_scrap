@@ -10,7 +10,7 @@ from langdetect import detect
 # Specify the path to your CSV file
 data = pd.read_csv('proxies.csv', sep=';') # id;ip;port_http;port_socks5;username;password;internal_ip
 dict_data = data.to_dict('records')
-print(dict_data)
+#print(dict_data)
 
 # all_proxies = []
 # for i in dict_data:
@@ -38,7 +38,7 @@ langs = ['en', 'uk', 'ru']
 # }
 
 search_query = ' NOT '.join([
-    '"python"', '"Canonical"', '"Turing"', '"Oowlish"', '"Listopro"', '"C++"', '"java"',
+    '"python"', '"Canonical"', '"Turing"', '"TalentKompass"', '"Oowlish"', '"Listopro"', '"C++"', '"java"',
     '"C#"', '"Softwareentwickler"', '"Senior"', '"tech lead"', '"Développeur"', '"Programador"',
     '"Programmatore"', '"Analista"', '"Entwickler"', '"Entwicklun"', '"ingénieur"', '"codifica"',
     '"Werkstudent"', '"Programmieren"', '"Remote after intial period"', '"Entwickler"',
@@ -50,13 +50,16 @@ search_query = urllib.parse.quote(search_query)
 url = f'https://www.linkedin.com/jobs/search?keywords={search_query}&location=Worldwide&locationId=&geoId=92000000&f_TPR=&f_WT=2&position=1&pageNum=0'
 
 
-def job_ids(db):
+def job_ids():
+    print('db_select')
     jids = db.execute("SELECT jobID FROM jobs").fetchall()
     result = [i[0] for i in jids]
+    print(result)
     return result
 
 db_name = 'jobs.db'
 db = sqlite3.connect(db_name)
+
 db.execute('''
     CREATE TABLE IF NOT EXISTS jobs (
         jobID           INTEGER PRIMARY KEY NOT NULL, 
@@ -93,10 +96,10 @@ except requests.exceptions.RequestException as e:
 
 
 def get_job_description(jid):
-    time.sleep(random.uniform(1, 5))
+    time.sleep(random.uniform(0, 2))
 
     try:
-        url = 'https://www.linkedin.com/jobs/view/' + jid
+        url = f'https://www.linkedin.com/jobs/view/{jid}'
         response = requests.get(url, proxies=random.choice(all_proxies))
         soup = BeautifulSoup(response.text, 'html.parser')
         
@@ -109,10 +112,12 @@ def get_job_description(jid):
         print(f'\ntitle: {soup.title.text}\ndescr: {description[:20]}...\nid: {jid}\nlang: {desc_lang}\neasy apply: {easy_apply}\nseniority_level: {seniority_level}')
         #print(description[:20] + '...')
         #job_id = short_info.find(attrs)
+        return (jid, soup.title.text, desc_lang, description, easy_apply, seniority_level)
     except Exception as e:
-        print(jid + ' - ' + str(e))
+        #print(str(jid) + ' - ' + str(e))
+        print(f'{jid} - {e}')
         
-    pass
+    
 
 total_jobs = int(''.join(filter(str.isdigit, total_jobs)))
 
@@ -121,9 +126,9 @@ print(f'pages: {pages}')
 
 
 start = 0
-#for j in range(pages):
-for j in range(3):
-    print(f'page: {j} | start: {start}')
+for j in range(pages):
+#for j in range(3):
+    print(f'page: {j} of {pages} | start: {start}')
     url = ''.join([
         'https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=',
         search_query,
@@ -137,6 +142,7 @@ for j in range(3):
     try:
         # Send an HTTP GET request with the proxy settings
         response = requests.get(url, proxies=random.choice(all_proxies))
+        print(url)
 
         # Check if the request was successful (HTTP status code 200)
         if response.status_code == 200:
@@ -146,16 +152,31 @@ for j in range(3):
 
             # TODO: make language check
             job_ids = [
-                j.find(attrs={'class': 'base-card'})['data-entity-urn'].split(':')[-1] 
+                int(j.find(attrs={'class': 'base-card'})['data-entity-urn'].split(':')[-1])
                 for j in jobs_on_page 
-                if detect(j.find(attrs={'class':'sr-only'}).text) in langs
+                if j.find(attrs={'class':'sr-only'}) is not None and detect(j.find(attrs={'class':'sr-only'}).text) in langs
             ]
             print(job_ids)
             print(len(job_ids))
 
-            with Pool(cpu_count()) as p:
-                files = p.map(get_job_description, job_ids)            
+            jids = db.execute("SELECT jobID FROM jobs").fetchall()
+            job_ids_from_db = [i[0] for i in jids]
+            #print(f'job_ids_from_db: {job_ids_from_db}')
 
+            unique_job_ids = list(set(job_ids).difference(job_ids_from_db))
+            print(f'unique_job_ids: {len(unique_job_ids)} || job_ids: {len(job_ids)}')
+            with Pool(cpu_count()) as p:
+                jobs_info_list = p.map(get_job_description, unique_job_ids)
+                #print(jobs_info_list)
+
+            jobs_info_list = [i for i in jobs_info_list if i is not None] # delete NoneType
+            c = db.cursor()
+            c.executemany('INSERT INTO jobs VALUES(?,?,?,?,?,?)', jobs_info_list)
+
+            print('We have inserted', c.rowcount, 'records to the table.')
+
+            #commit the changes to db			
+            db.commit()
         else:
             print(f"Failed to retrieve the URL. Status code: {response.status_code}")
 
