@@ -10,18 +10,32 @@ from langdetect import detect
 # Specify the path to your CSV file
 data = pd.read_csv('proxies.csv', sep=';') # id;ip;port_http;port_socks5;username;password;internal_ip
 dict_data = data.to_dict('records')
+print(dict_data)
 
-proxy_server = dict_data[0]['internal_ip']
-proxy_port_http = dict_data[0]['port_http']
-proxy_port_socks5 = dict_data[0]['port_socks5']
-proxy_username = dict_data[0]['username']
-proxy_password = dict_data[0]['password']
+# all_proxies = []
+# for i in dict_data:
+
+#     print(i)
+#     all_proxies.append({'https': f"http://{dict_data[i]['username']}:{dict_data[i]['password']}@{dict_data[i]['internal_ip']}:{dict_data[i]['port_http']}"} )
+
+all_proxies = [
+    {'https': f"http://{i['username']}:{i['password']}@{i['internal_ip']}:{i['port_http']}"} 
+    for i in dict_data
+]
+
+# proxy_server = dict_data[0]['internal_ip']
+# proxy_port_http = dict_data[0]['port_http']
+# proxy_port_socks5 = dict_data[0]['port_socks5']
+# proxy_username = dict_data[0]['username']
+# proxy_password = dict_data[0]['password']
 
 langs = ['en', 'uk', 'ru']
 
-proxies = {
-    "https": f'http://{proxy_username}:{proxy_password}@{proxy_server}:{proxy_port_http}' 
-}
+#proxy = random.randint(0, len(all_proxies))
+#movie = random.choice(all_proxies)
+# proxies = {
+#     'https': f'http://{proxy_username}:{proxy_password}@{proxy_server}:{proxy_port_http}'
+# }
 
 search_query = ' NOT '.join([
     '"python"', '"Canonical"', '"Turing"', '"Oowlish"', '"Listopro"', '"C++"', '"java"',
@@ -36,9 +50,28 @@ search_query = urllib.parse.quote(search_query)
 url = f'https://www.linkedin.com/jobs/search?keywords={search_query}&location=Worldwide&locationId=&geoId=92000000&f_TPR=&f_WT=2&position=1&pageNum=0'
 
 
+def job_ids(db):
+    jids = db.execute("SELECT jobID FROM jobs").fetchall()
+    result = [i[0] for i in jids]
+    return result
+
+db_name = 'jobs.db'
+db = sqlite3.connect(db_name)
+db.execute('''
+    CREATE TABLE IF NOT EXISTS jobs (
+        jobID           INTEGER PRIMARY KEY NOT NULL, 
+        title           TEXT, 
+        language        TEXT, 
+        description     TEXT, 
+        easy_apply      BOOLEAN DEFAULT 0,
+        seniority       TEXT
+    )
+''')
+
+
 try:
     # Send an HTTP GET request with the proxy settings
-    response = requests.get(url, proxies=proxies)
+    response = requests.get(url, proxies=random.choice(all_proxies))
 
     # Check if the request was successful (HTTP status code 200)
     if response.status_code == 200:
@@ -64,7 +97,7 @@ def get_job_description(jid):
 
     try:
         url = 'https://www.linkedin.com/jobs/view/' + jid
-        response = requests.get(url, proxies=proxies)
+        response = requests.get(url, proxies=random.choice(all_proxies))
         soup = BeautifulSoup(response.text, 'html.parser')
         
         description = soup.find(attrs={'class':'show-more-less-html__markup'}).text.strip()
@@ -103,7 +136,7 @@ for j in range(3):
 
     try:
         # Send an HTTP GET request with the proxy settings
-        response = requests.get(url, proxies=proxies)
+        response = requests.get(url, proxies=random.choice(all_proxies))
 
         # Check if the request was successful (HTTP status code 200)
         if response.status_code == 200:
@@ -132,3 +165,4 @@ for j in range(3):
 
     start += 25
 
+db.close()
