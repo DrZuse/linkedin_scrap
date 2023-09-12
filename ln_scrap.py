@@ -1,14 +1,14 @@
-import requests, time
+import requests, time, os
 from bs4 import BeautifulSoup
 import pandas as pd
 import urllib
+import sqlite3
 from multiprocessing import Pool, cpu_count
 import random
 from langdetect import detect
 
 # Specify the path to your CSV file
-csv_file_path = "proxies.csv" # id;ip;port_http;port_socks5;username;password;internal_ip
-data = pd.read_csv('proxies.csv', sep=';')
+data = pd.read_csv('proxies.csv', sep=';') # id;ip;port_http;port_socks5;username;password;internal_ip
 dict_data = data.to_dict('records')
 
 proxy_server = dict_data[0]['internal_ip']
