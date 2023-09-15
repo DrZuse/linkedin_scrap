@@ -41,7 +41,7 @@ search_query = ' NOT '.join([
     '"python"', '"Canonical"', '"Sophilabs"', '"Turing"', '"TalentKompass"', '"Oowlish"', '"Listopro"', '"C++"', '"java"',
     '"C#"', '"Senior"', '"lead"', '"Développeur"', '"Programador"',
     '"Programmatore"', '"Analista"', '"Entwickler"', '"Entwicklun"', '"ingénieur"', '"codifica"',
-    '"Werkstudent"', '"Programmieren"', '"Entwickler"', '"onsite"', '"on-site"',
+    '"Werkstudent"', '"Programmieren"', '"Entwickler"', '"onsite"', '"on-site"', '"Principal"',
     '"Desarrollador"', '"Octopus IT"', '"remoto"', '"Teletrabajo"', '"tutor"', '"Sr."', '"SecOps"'
 ])
 
