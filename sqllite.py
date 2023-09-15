@@ -5,7 +5,7 @@ import os
 jobs.db
 table tree:
 -jobs
---job ID (unique, from LN)
+--jobID (unique, from LN)
 --title
 --language
 --description

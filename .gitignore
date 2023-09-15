@@ -1,3 +1,4 @@
 *.env
 proxies.csv
 *.db
+*test*
