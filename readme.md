@@ -1,6 +1,8 @@
 # LinkedIn Job Scraper
-
 This Python script is designed to scrape job postings from LinkedIn. It uses a list of proxies to send HTTP requests and BeautifulSoup to parse the HTML responses. The script filters job descriptions based on a list of languages and stores the job information in a SQLite database.
+
+## Watch on YouTube
+[![Watch the video](https://img.youtube.com/vi/FlmTbkxxNtU/sddefault.jpg)](https://www.youtube.com/watch?v=FlmTbkxxNtU)
 
 ## Features
 - Uses proxies to send requests
